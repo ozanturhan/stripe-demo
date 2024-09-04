@@ -5,7 +5,7 @@ import {
   InferGetServerSidePropsType,
 } from "next/types";
 import { useState } from "react";
-import { useMutation } from "react-query";
+import { useMutation, useQuery } from "react-query";
 import { useRouter } from "next/router";
 import Link from "next/link";
 
@@ -18,15 +18,32 @@ const Customer = ({
   const [email, setEmail] = useState<string>("");
 
   const createCustomerMutation = useMutation({
-    mutationFn: (email: string) =>
-      fetch("/api/create-customer/", {
+    mutationFn: (email: string) => {
+      const headers = new Headers();
+      headers.append("Content-Type", "application/json");
+      headers.append("Authorization", process.env.NEXT_PUBLIC_APP_TOKEN!);
+
+      return fetch(`${process.env.NEXT_PUBLIC_API}/stripe/create-customer`, {
         method: "POST",
+        headers,
         body: JSON.stringify({ email: email }),
+      }).then((res) => res.json());
+    },
+  });
+
+  const loginMutation = useMutation({
+    mutationFn: (customerId: string) =>
+      fetch("/api/login", {
+        method: "POST",
+        body: JSON.stringify({ customerId: customerId }),
       }),
   });
 
   const handleSubmit = async () => {
-    await createCustomerMutation.mutateAsync(email);
+    const { customer } = await createCustomerMutation.mutateAsync(email);
+
+    await loginMutation.mutateAsync(customer);
+
     router.reload();
   };
 

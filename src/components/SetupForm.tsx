@@ -5,17 +5,31 @@ import {
   useStripe,
 } from "@stripe/react-stripe-js";
 import { useMutation, useQuery } from "react-query";
+import { useAuthContext } from "@/pages/context/AuthContext";
 
 const SetupForm: FC<{ onCardAdded: () => void }> = ({ onCardAdded }) => {
   const stripe = useStripe();
   const elements = useElements();
-
+  const auth = useAuthContext();
   const [errorMessage, setErrorMessage] = useState<string | undefined>(
     undefined,
   );
 
   const setupIntentMutation = useMutation({
-    mutationFn: () => fetch("/api/setup-intent").then((res) => res.json()),
+    mutationFn: () => {
+      const headers = new Headers();
+      headers.append("Content-Type", "application/json");
+      headers.append("Authorization", process.env.NEXT_PUBLIC_APP_TOKEN!);
+
+      return fetch(
+        `${process.env.NEXT_PUBLIC_API}/stripe/create-setup-intent`,
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ customerId: auth?.customer }),
+        },
+      ).then((res) => res.json());
+    },
   });
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {

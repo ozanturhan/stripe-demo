@@ -15,32 +15,16 @@ const stripePromise = loadStripe(
 );
 
 const Payment = () => {
-  const [selectedPaymentId, setSelectedPaymentId] = useState("");
-
-  const {
-    data: paymentMethods,
-    isLoading: isPaymentsLoading,
-    isFetched: isPaymentsFetched,
-  } = useQuery({
-    queryKey: ["payment-methods"],
-    queryFn: () => fetch("/api/payment-methods").then((res) => res.json()),
-    retry: false,
-  });
-
-  if (paymentMethods) {
-    return (
-      <div className="flex flex-col">
-        <Elements
-          stripe={stripePromise}
-          options={{ mode: "setup", currency: "usd" }}
-        >
-          <PaymentForm />
-        </Elements>
-      </div>
-    );
-  }
-
-  return <div>Loading...</div>;
+  return (
+    <div className="flex flex-col">
+      <Elements
+        stripe={stripePromise}
+        options={{ mode: "setup", currency: "usd" }}
+      >
+        <PaymentForm />
+      </Elements>
+    </div>
+  );
 };
 
 export default Payment;

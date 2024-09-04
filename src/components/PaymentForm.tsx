@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useElements, useStripe } from "@stripe/react-stripe-js";
 import { useMutation, useQuery } from "react-query";
 import SetupForm from "@/components/SetupForm";
+import { useAuthContext } from "@/pages/context/AuthContext";
 
 const PaymentForm = () => {
   const stripe = useStripe();
@@ -9,19 +10,37 @@ const PaymentForm = () => {
 
   const [selectedPaymentId, setSelectedPaymentId] = useState("");
   const [isAddingNewCard, setIsAddingNewCard] = useState(false);
+  const auth = useAuthContext();
 
-  const { data: paymentMethods, refetch } = useQuery({
+  const { data: paymentMethodsResponse, refetch } = useQuery({
     queryKey: ["payment-methods"],
-    queryFn: () => fetch("/api/payment-methods").then((res) => res.json()),
+    queryFn: () => {
+      const headers = new Headers();
+      headers.append("Content-Type", "application/json");
+      headers.append("Authorization", process.env.NEXT_PUBLIC_APP_TOKEN!);
+
+      return fetch(
+        `${process.env.NEXT_PUBLIC_API}/stripe/payment-methods/${auth?.customer}`,
+        {
+          headers,
+        },
+      ).then((res) => res.json());
+    },
     retry: false,
   });
 
   const makePaymentMutation = useMutation({
-    mutationFn: (paymentMethod: string) =>
-      fetch("/api/make-payment", {
+    mutationFn: (paymentMethodId: string) => {
+      const headers = new Headers();
+      headers.append("Content-Type", "application/json");
+      headers.append("Authorization", process.env.NEXT_PUBLIC_APP_TOKEN!);
+
+      return fetch(`${process.env.NEXT_PUBLIC_API}/stripe/process-payment`, {
+        headers,
         method: "POST",
-        body: JSON.stringify({ payment: paymentMethod }),
-      }).then((res) => res.json()),
+        body: JSON.stringify({ paymentMethodId, customerId: auth?.customer }),
+      }).then((res) => res.json());
+    },
   });
 
   // creates separate payment
@@ -37,7 +56,7 @@ const PaymentForm = () => {
 
     const { paymentIntent } = await stripe.confirmPayment({
       //`Elements` instance that was used to create the Payment Element
-      clientSecret: response.client_secret,
+      clientSecret: response.clientSecret,
       confirmParams: {
         return_url: "http://localhost:3000/payment/status",
       },
@@ -49,7 +68,7 @@ const PaymentForm = () => {
     }
   };
 
-  if (paymentMethods) {
+  if (paymentMethodsResponse?.paymentMethods) {
     return (
       <div className="flex flex-col gap-2">
         <div className="flex flex-col">
@@ -59,7 +78,7 @@ const PaymentForm = () => {
             onChange={(e) => setSelectedPaymentId(e.currentTarget.value)}
           >
             <option>Select</option>
-            {paymentMethods.map((payment) => (
+            {paymentMethodsResponse?.paymentMethods?.map((payment) => (
               <option key={payment.id} value={payment.id}>
                 {payment.card.display_brand}-***-{payment.card.last4}
               </option>
