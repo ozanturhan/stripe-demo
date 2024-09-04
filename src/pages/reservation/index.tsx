@@ -5,59 +5,48 @@ import {
   InferGetServerSidePropsType,
 } from "next/types";
 import { useState } from "react";
-import { useMutation } from "react-query";
+import { useMutation, useQuery } from "react-query";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import SetupForm from "@/components/SetupForm";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements } from "@stripe/react-stripe-js";
+import Payment from "@/components/Payment";
 
 type Customer = string | null;
+
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
+);
 
 const Customer = ({
   customer,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const router = useRouter();
-  const [email, setEmail] = useState<string>("");
+  const [isReserving, setIsReserving] = useState<boolean>(false);
 
-  const createCustomerMutation = useMutation({
-    mutationFn: () =>
-      fetch("/api/create-customer/", {
-        method: "POST",
-        body: JSON.stringify({ email: email }),
-      }),
-  });
-
-  const handleSubmit = async () => {
-    await createCustomerMutation.mutateAsync();
-    router.reload();
+  const handleReserving = async () => {
+    setIsReserving(true);
   };
 
-  if (customer) {
-    return (
-      <div className="flex justify-center">
-        <div className="flex flex-col">
-          <span>Registered Customer: {customer}</span>
-
-          <Link href="/reservation" className="text-blue-500">
-            Listing
-          </Link>
-        </div>
-      </div>
-    );
+  if (!customer) {
+    return router.push("customer");
   }
 
   return (
-    <div className="flex justify-center">
-      <div className="flex flex-col">
+    <div className="flex flex-col gap-2 justify-center">
+      <div className="flex justify-center">
         <div className="flex flex-col">
-          <label htmlFor="customer-email">Email</label>
-          <input
-            onInput={(e) => setEmail(e.currentTarget.value)}
-            placeholder="Email"
-            id="customer-email"
-            className="border border-gray-500 rounded p-2 "
-          />
+          <button
+            className="bg-blue-500 text-white rounded p-2"
+            onClick={handleReserving}
+          >
+            Make Reservation
+          </button>
         </div>
-        <button onClick={handleSubmit}>Submit</button>
       </div>
+
+      {isReserving && <Payment />}
     </div>
   );
 };

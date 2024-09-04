@@ -5,7 +5,7 @@ import {
   useStripe,
 } from "@stripe/react-stripe-js";
 
-const Status: FC<{ clientSecret: string }> = ({ clientSecret }) => {
+const SetupStatus: FC<{ clientSecret: string }> = ({ clientSecret }) => {
   const stripe = useStripe();
 
   const [message, setMessage] = useState<string>();
@@ -51,4 +51,4 @@ const Status: FC<{ clientSecret: string }> = ({ clientSecret }) => {
   return <div>bok</div>;
 };
 
-export default Status;
+export default SetupStatus;

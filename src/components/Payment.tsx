@@ -8,7 +8,7 @@ import {
 import { useMutation, useQuery } from "react-query";
 import { loadStripe } from "@stripe/stripe-js";
 import SetupForm from "@/components/SetupForm";
-import PaymentList from "@/components/PaymentList";
+import PaymentForm from "@/components/PaymentForm";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
@@ -34,9 +34,7 @@ const Payment = () => {
           stripe={stripePromise}
           options={{ mode: "setup", currency: "usd" }}
         >
-          <PaymentList />
-
-          <SetupForm />
+          <PaymentForm />
         </Elements>
       </div>
     );

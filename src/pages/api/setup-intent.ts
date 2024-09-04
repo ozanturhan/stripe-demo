@@ -15,21 +15,7 @@ export default async function handler(
 ) {
   const cookies = new Cookies(req, res);
 
-  let customerId = cookies.get("customer");
-
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: "deneme@deneme.com",
-    });
-
-    cookies.set("customer", customer.id, {
-      httpOnly: true, // true by default
-    });
-
-    customerId = customer.id;
-
-    // stripe.customers.update(customerId, {default_source: })
-  }
+  const customerId = cookies.get("customer");
 
   const intent = await stripe.setupIntents.create({
     customer: customerId,
@@ -37,5 +23,6 @@ export default async function handler(
       enabled: true,
     },
   });
+
   res.status(200).json({ clientSecret: intent.client_secret });
 }

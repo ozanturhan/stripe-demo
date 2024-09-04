@@ -11,31 +11,55 @@ type Data = {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<Data>,
+  res: NextApiResponse,
 ) {
   const cookies = new Cookies(req, res);
 
-  let customerId = cookies.get("customer");
+  const customerId = cookies.get("customer");
 
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: "deneme@deneme.com",
-    });
-
-    cookies.set("customer", customer.id, {
-      httpOnly: true, // true by default
-    });
-
-    customerId = customer.id;
-
-    // stripe.customers.update(customerId, {default_source: })
-  }
-
-  const intent = await stripe.setupIntents.create({
+  const paymentMethods = await stripe.paymentMethods.list({
     customer: customerId,
-    automatic_payment_methods: {
-      enabled: true,
+    type: "card",
+  });
+
+  const { payment } = JSON.parse(req.body);
+
+  const paymentMethod = payment || paymentMethods.data[0].id;
+
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: 1099,
+    currency: "eur",
+    automatic_payment_methods: { enabled: true },
+    customer: customerId,
+    payment_method: paymentMethod,
+    metadata: {
+      reservationId: "afkjhsdkhfskdfhksjdhfkjsdh",
     },
   });
-  res.status(200).json({ clientSecret: intent.client_secret });
+
+  const subscription = await stripe.subscriptionSchedules.create({
+    customer: customerId,
+    start_date: 1728138055,
+    end_behavior: "release",
+    phases: [
+      {
+        end_date: 1730733655,
+        billing_cycle_anchor: "phase_start",
+        default_payment_method: paymentMethod,
+        items: [
+          {
+            price_data: {
+              currency: "usd",
+              product: "prod_Qmcm8S6Ydk22hP",
+              unit_amount: 1099,
+              recurring: {
+                interval: "month",
+              },
+            },
+          },
+        ],
+      },
+    ],
+  });
+  res.status(200).json(paymentIntent);
 }

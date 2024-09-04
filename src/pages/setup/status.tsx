@@ -4,7 +4,7 @@ import React from "react";
 import SetupForm from "@/components/SetupForm";
 import { useQuery } from "react-query";
 import { useRouter } from "next/router";
-import Status from "@/components/Status";
+import SetupStatus from "@/components/SetupStatus";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
@@ -21,7 +21,7 @@ const PaymentStatus = () => {
 
   return clientSecret ? (
     <Elements stripe={stripePromise} options={options}>
-      <Status clientSecret={clientSecret} />
+      <SetupStatus clientSecret={clientSecret} />
     </Elements>
   ) : null;
 };

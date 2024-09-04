@@ -5,13 +5,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 import type { NextApiRequest, NextApiResponse } from "next";
 
-type Data = {
-  paymentMethods: Stripe.PaymentMethod[];
-};
-
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<Data>,
+  res: NextApiResponse<Stripe.PaymentMethod[]>,
 ) {
   const cookies = new Cookies(req, res);
 
@@ -21,5 +17,5 @@ export default async function handler(
     customer: customerId,
   });
 
-  res.status(200).json({ paymentMethods: paymentMethods.data });
+  res.status(200).json(paymentMethods.data);
 }

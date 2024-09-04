@@ -25,20 +25,68 @@ export default async function handler(
   const paymentMethod = paymentMethods.data[0].id;
 
   try {
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: 1099,
-      currency: "eur",
-      // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
-      automatic_payment_methods: { enabled: true },
+    const subscription = await stripe.subscriptionSchedules.create({
       customer: customerId,
-      payment_method: paymentMethod,
-      return_url: "https://example.com/order/123/complete",
-      off_session: true,
-      confirm: true,
+      start_date: 1728138055,
+      end_behavior: "release",
+      phases: [
+        {
+          end_date: 1730733655,
+          billing_cycle_anchor: "phase_start",
+          default_payment_method: paymentMethod,
+          items: [
+            {
+              price_data: {
+                currency: "usd",
+                product: "prod_Qmcm8S6Ydk22hP",
+                unit_amount: 1099,
+                recurring: {
+                  interval: "month",
+                },
+              },
+            },
+          ],
+        },
+      ],
     });
-  } catch (err) {
-    // Error code will be authentication_required if authentication is needed
-    console.log(err);
+
+    /*const subscription = await stripe.subscriptions.create({
+      customer: customerId!,
+      default_payment_method: paymentMethod,
+      items: [
+        {
+          price_data: {
+            currency: "usd",
+            product: "prod_Qmcm8S6Ydk22hP",
+            unit_amount: 1099,
+            recurring: {
+              interval: "month",
+            },
+          },
+        },
+      ],
+      metadata: {
+        rezervationId: "sa3d324fsdaf234klsj2323efdd4324332424dkfhskhdfk",
+      },
+      billing_cycle_anchor: 1730678400,
+      payment_behavior: "default_incomplete",
+      expand: ["latest_invoice.payment_intent"],
+    });*/
+
+    /*    if (subscription.latest_invoice) {
+      const invoiceId = (subscription.latest_invoice as Stripe.Invoice)?.id;
+
+      await stripe.invoices.pay(invoiceId, {
+        paid_out_of_band: true,
+      });
+    }*/
+
+    res.send({
+      subscriptionId: subscription.id,
+      clientSecret: subscription.latest_invoice?.payment_intent.client_secret,
+    });
+  } catch (error) {
+    return res.status(400).send({ error: { message: error.message } });
   }
 
   res.status(200).json({ no: "mo" });
